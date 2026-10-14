@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Forge">
+<link rel="manifest" href="./manifest.json">
+<title>THE FORGE</title>
+<style>
+:root {
+  --bg: #05070c;
+  --bg-panel: #0a1420;
+  --bg-panel-deep: #060c16;
+  --text-main: #b8e8ff;
+  --text-bright: #eaf7ff;
+  --accent: #4a90d9;
+  --accent-bright: #7fb8e8;
+  --accent-glow: #2a5c8e;
+  --gold: #ffd875;
+  --green: #6bd68a;
+  --green-dim: #3a7a50;
+  --red: #ff8a8a;
+  --red-dim: #7a3030;
+  --border-dim: #1f3a52;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: var(--text-main);
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* background scan texture, matching THE SYSTEM */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(127,184,232,0.02) 0px, rgba(127,184,232,0.02) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ===== TOP BAR ===== */
+#top-bar {
+  padding: 14px 18px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-dim);
+}
+#top-bar .brand {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--accent-bright);
+  font-weight: bold;
+}
+#top-bar .brand .tag {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #3a5a78;
+  margin-top: 2px;
+  font-weight: normal;
+}
+#top-bar .level-chip {
+  border: 1px solid var(--accent-glow);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+/* ===== SCREEN CONTAINER ===== */
+#screens {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 100px;
+  -webkit-overflow-scrolling: touch;
+}
+.screen {
+  display: none;
+  animation: screenIn 0.25s ease;
+}
+.screen.active { display: block; }
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #3a5a78;
+  margin-bottom: 10px;
+}
+
+/* ===== COUNTDOWN CLOCK ===== */
+.countdown-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #5f8fb8;
+}
+.countdown-strip .clock {
+  font-size: 14px;
+  color: var(--accent-bright);
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+.countdown-strip.urgent {
+  border-color: var(--red-dim);
+}
+.countdown-strip.urgent .clock {
+  color: var(--red);
+}
+.countdown-strip.rest-today {
+  border-color: var(--green-dim);
+}
+.countdown-strip.rest-today .clock {
+  color: var(--green);
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.card-title {
+  font-size: 14px;
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+.card-sub {
+  font-size: 11px;
+  color: #6fa8d6;
+}
+
+/* ===== STAT ROW (home screen) ===== */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+.stat-block {
+  flex: 1;
+  text-align: center;
+}
+.stat-num {
+  font-size: 22px;
+  color: var(--text-bright);
+  font-weight: bold;
+}
+.stat-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #4a7aa8;
+  margin-top: 2px;
+}
+
+.xp-bar-wrap {
+  margin-bottom: 20px;
+}
+.xp-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #6fa8d6;
+  margin-bottom: 4px;
+}
+.xp-bar-track {
+  height: 8px;
+  background: #0a1420;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1f6fb8, #4ab6ff);
+  transition: width 0.4s ease;
+}
+
+/* ===== QUEST CARD ===== */
+.quest-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.quest-card.done {
+  border-color: var(--green-dim);
+  opacity: 0.7;
+}
+.quest-card .qname {
+  font-size: 13px;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+.quest-card .qmeta {
+  font-size: 10px;
+  color: #5f8fb8;
+  margin-bottom: 10px;
+}
+.quest-card .qactions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--accent-glow);
+  background: transparent;
+  color: var(--accent-bright);
+  flex: 1;
+  text-align: center;
+}
+.btn:active { background: rgba(74,144,217,0.15); }
+.btn.primary {
+  border-color: #3a8a55;
+  color: #c9ffd9;
+}
+.btn.primary:active { background: rgba(60,160,90,0.15); }
+.btn.ghost {
+  border-color: var(--border-dim);
+  color: #6fa8d6;
+}
+.btn.full { width: 100%; }
+.btn.small { flex: none; padding: 8px 12px; font-size: 10px; }
+
+/* ===== BOTTOM NAV ===== */
+#bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding-bottom: var(--safe-bottom);
+  background: rgba(6,12,22,0.92);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  z-index: 50;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0 8px;
+  color: #3a5a78;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.nav-item.active { color: var(--accent-bright); }
+.nav-item svg { width: 20px; height: 20px; }
+.nav-item.active svg { filter: drop-shadow(0 0 4px rgba(127,184,232,0.6)); }
+
+/* ===== GLASS HUD PANEL (modal) ===== */
+#panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,5,10,0.75);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+}
+#panel-overlay.active { display: flex; }
+
+.hud-panel {
+  width: 100%;
+  max-height: 86vh;
+  background: linear-gradient(180deg, rgba(10,20,32,0.97), rgba(5,10,18,0.99));
+  border: 1px solid var(--accent-glow);
+  border-bottom: none;
+  clip-path: polygon(
+    0 14px, 14px 0,
+    calc(100% - 14px) 0, 100% 14px,
+    100% 100%, 0 100%
+  );
+  box-shadow: 0 0 30px rgba(74,144,217,0.25), 0 -4px 20px rgba(0,0,0,0.5);
+  padding: 20px 18px calc(20px + var(--safe-bottom));
+  overflow-y: auto;
+  animation: panelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+@keyframes panelIn {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-bright), transparent);
+  opacity: 0.6;
+}
+.hud-panel-tag {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #3a7aa8;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.hud-panel-title {
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--text-bright);
+  text-align: center;
+  margin-bottom: 18px;
+  position: relative;
+}
+.hud-panel-title::before, .hud-panel-title::after {
+  content: '◆';
+  font-size: 8px;
+  color: var(--accent);
+  margin: 0 8px;
+  vertical-align: middle;
+}
+.hud-panel-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6fa8d6;
+  font-size: 14px;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.field-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #5f8fb8;
+  margin-bottom: 6px;
+  margin-top: 16px;
+  display: block;
+}
+.field-label:first-child { margin-top: 0; }
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  background: #060c16;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 11px 12px;
+  color: var(--text-bright);
+  font-family: inherit;
+  font-size: 13px;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  border: 1px solid var(--border-dim);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: #6fa8d6;
+}
+.pill.selected {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+  background: rgba(74,144,217,0.12);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #3a5a78;
+  font-size: 12px;
+}
+
+/* ===== TOGGLE ROW (settings) ===== */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-dim);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row-label {
+  font-size: 12px;
+  color: var(--text-bright);
+}
+.toggle-row-sub {
+  font-size: 10px;
+  color: #4a7aa8;
+  margin-top: 2px;
+}
+.switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-dim);
+  background: #060c16;
+  position: relative;
+  flex-shrink: 0;
+}
+.switch.on {
+  border-color: var(--accent);
+  background: rgba(74,144,217,0.2);
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #4a7aa8;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.switch.on::after {
+  transform: translateX(18px);
+  background: var(--accent-bright);
+  box-shadow: 0 0 6px rgba(127,184,232,0.6);
+}
+
+/* ===== LIBRARY SCREEN ===== */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.filter-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border-dim);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: #6fa8d6;
+  white-space: nowrap;
+}
+.filter-chip.selected {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+  background: rgba(74,144,217,0.12);
+}
+.filter-group-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #3a5a78;
+  margin-bottom: 6px;
+}
+.exercise-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.exercise-card-info { flex: 1; }
+.exercise-card .ename {
+  font-size: 13px;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+.exercise-card .etags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.etag {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--border-dim);
+  color: #5f8fb8;
+}
+.etag.difficulty-beginner { border-color: var(--green-dim); color: var(--green); }
+.etag.difficulty-some { border-color: #8a7a3a; color: var(--gold); }
+.etag.difficulty-experienced { border-color: var(--red-dim); color: var(--red); }
+
+.guideline-list {
+  margin: 14px 0 4px;
+  padding-left: 0;
+  list-style: none;
+}
+.guideline-list li {
+  font-size: 12px;
+  color: #a8d4ef;
+  line-height: 1.6;
+  padding-left: 18px;
+  position: relative;
+  margin-bottom: 10px;
+}
+.guideline-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="top-bar">
+    <div class="brand">THE FORGE<span class="tag">// body is the system //</span></div>
+    <div class="level-chip" id="top-level-chip">LVL 1</div>
+  </div>
+
+  <div id="screens">
+
+    <!-- ===== HOME SCREEN ===== -->
+    <div class="screen active" id="screen-home">
+      <div class="countdown-strip" id="countdown-strip">
+        <span id="countdown-label">TIME REMAINING TODAY</span>
+        <span class="clock" id="clock-val">--:--:--</span>
+      </div>
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="stat-num" id="home-streak">0</div>
+          <div class="stat-label">STREAK</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-num" id="home-xp">0</div>
+          <div class="stat-label">TOTAL XP</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-num" id="home-rank">E</div>
+          <div class="stat-label">RANK</div>
+        </div>
+      </div>
+
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-label">
+          <span>EXP</span>
+          <span id="home-xp-text">0 / 100</span>
+        </div>
+        <div class="xp-bar-track"><div class="xp-bar-fill" id="home-xp-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="section-label">TODAY'S QUESTS</div>
+      <div id="quest-list"></div>
+
+      <button class="btn full" style="margin-top:4px;" onclick="openPanel('panel-add-quest')">+ ADD QUEST</button>
+    </div>
+
+    <!-- ===== WORKOUT SCREEN ===== -->
+    <div class="screen" id="screen-workout">
+      <div class="section-label">TRACKING MODES</div>
+      <div class="card">
+        <div class="card-title">Camera Rep Counter</div>
+        <div class="card-sub">Push-ups, sit-ups, squats — live tracking</div>
+        <button class="btn full" style="margin-top:12px;" onclick="openPanel('panel-camera-select')">START CAMERA TRACKING</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Start Workout (GPS)</div>
+        <div class="card-sub">Live distance + step tracking</div>
+        <button class="btn full" style="margin-top:12px;" onclick="openPanel('panel-gps-workout')">START GPS WORKOUT</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Manual Entry</div>
+        <div class="card-sub">Log reps, distance, or steps yourself</div>
+        <button class="btn full" style="margin-top:12px;" onclick="openPanel('panel-manual-entry')">LOG MANUALLY</button>
+      </div>
+    </div>
+
+    <!-- ===== LIBRARY SCREEN ===== -->
+    <div class="screen" id="screen-library">
+      <div class="filter-group-label">MUSCLE GROUP</div>
+      <div class="filter-row" id="muscle-filter-row"></div>
+
+      <div class="filter-group-label">TYPE</div>
+      <div class="filter-row" id="type-filter-row"></div>
+
+      <div class="section-label" style="margin-top:14px;" id="library-count-label">EXERCISES</div>
+      <div id="library-list"></div>
+    </div>
+
+    <!-- ===== STATS SCREEN ===== -->
+    <div class="screen" id="screen-stats">
+      <div class="section-label">7-DAY LOG</div>
+      <div id="stats-log">
+        <div class="empty-state">No activity logged yet.<br>Complete a quest to see your history here.</div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE SCREEN ===== -->
+    <div class="screen" id="screen-profile">
+      <div class="card" style="text-align:center;">
+        <div class="card-title" id="profile-name-display">HUNTER</div>
+        <div class="card-sub" id="profile-rank-display">E-RANK · LEVEL 1</div>
+      </div>
+
+      <div class="section-label" style="margin-top:4px;">PROFILE DATA</div>
+      <div class="card" id="profile-data-card">
+        <!-- populated by JS -->
+      </div>
+
+      <button class="btn full" onclick="openPanel('panel-edit-profile')">EDIT PROFILE</button>
+    </div>
+
+    <!-- ===== SETTINGS SCREEN ===== -->
+    <div class="screen" id="screen-settings">
+      <div class="section-label">NOTIFICATIONS</div>
+      <div class="card">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">Daily reminders</div>
+            <div class="toggle-row-sub">Get notified about pending quests</div>
+          </div>
+          <div class="switch on" id="toggle-notifications" onclick="toggleSwitch(this, 'notifications')"></div>
+        </div>
+      </div>
+
+      <div class="section-label">REST DAYS</div>
+      <div class="card">
+        <div class="card-sub" style="margin-bottom:12px;">Select your planned rest days — quests won't count against your streak on these days.</div>
+        <div class="pill-group" id="rest-day-pills"></div>
+      </div>
+
+      <div class="section-label">DATA</div>
+      <div class="card">
+        <button class="btn ghost full" onclick="openPanel('panel-confirm-clear')">CLEAR ALL DATA</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="bottom-nav">
+    <div class="nav-item active" data-screen="home" onclick="switchScreen('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></svg>
+      HOME
+    </div>
+    <div class="nav-item" data-screen="workout" onclick="switchScreen('workout')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11M4 4l3 3M20 20l-3-3M2 8l4 4-4 4M22 8l-4 4 4 4M8 2l4 4 4-4M8 22l4-4 4 4"/></svg>
+      WORKOUT
+    </div>
+    <div class="nav-item" data-screen="library" onclick="switchScreen('library')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5v15z"/></svg>
+      LIBRARY
+    </div>
+    <div class="nav-item" data-screen="stats" onclick="switchScreen('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+      STATS
+    </div>
+    <div class="nav-item" data-screen="profile" onclick="switchScreen('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+      PROFILE
+    </div>
+    <div class="nav-item" data-screen="settings" onclick="switchScreen('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.23.39.6.68 1.03.78"/></svg>
+      SETTINGS
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL OVERLAY (shared) ===== -->
+<div id="panel-overlay" onclick="if(event.target===this) closeAllPanels()">
+
+  <!-- Add Quest Panel -->
+  <div class="hud-panel hidden" id="panel-add-quest">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag">// NEW QUEST //</div>
+    <div class="hud-panel-title">ADD QUEST</div>
+
+    <label class="field-label">Exercise type</label>
+    <select id="new-quest-type">
+      <option value="pushups">Push-ups</option>
+      <option value="situps">Sit-ups</option>
+      <option value="squats">Squats</option>
+      <option value="run">Run / Walk (distance)</option>
+      <option value="custom">Custom</option>
+    </select>
+
+    <label class="field-label">Target amount</label>
+    <input type="text" id="new-quest-amount" placeholder="e.g. 20 reps, 2 km">
+
+    <button class="btn primary full" style="margin-top:20px;" onclick="addQuest()">ADD TO TODAY</button>
+  </div>
+
+  <!-- Manual Entry Panel -->
+  <div class="hud-panel hidden" id="panel-manual-entry">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag">// LOG RESULT //</div>
+    <div class="hud-panel-title">MANUAL ENTRY</div>
+
+    <label class="field-label">What did you do?</label>
+    <select id="manual-entry-type">
+      <option value="pushups">Push-ups</option>
+      <option value="situps">Sit-ups</option>
+      <option value="squats">Squats</option>
+      <option value="steps">Steps</option>
+      <option value="distance">Distance (km)</option>
+    </select>
+
+    <label class="field-label">Amount</label>
+    <input type="number" id="manual-entry-amount" placeholder="0">
+
+    <button class="btn primary full" style="margin-top:20px;" onclick="submitManualEntry()">LOG IT</button>
+  </div>
+
+  <!-- Edit Profile Panel -->
+  <div class="hud-panel hidden" id="panel-edit-profile">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag">// HUNTER DATA //</div>
+    <div class="hud-panel-title">EDIT PROFILE</div>
+
+    <label class="field-label">Name</label>
+    <input type="text" id="edit-name" placeholder="Your name">
+
+    <label class="field-label">Height (cm)</label>
+    <input type="number" id="edit-height" placeholder="170">
+
+    <label class="field-label">Weight (kg)</label>
+    <input type="number" id="edit-weight" placeholder="65">
+
+    <label class="field-label">Age</label>
+    <input type="number" id="edit-age" placeholder="18">
+
+    <label class="field-label">Past exercise experience</label>
+    <div class="pill-group" id="experience-pills">
+      <div class="pill" data-val="beginner">Beginner</div>
+      <div class="pill" data-val="some">Some experience</div>
+      <div class="pill" data-val="experienced">Experienced</div>
+    </div>
+
+    <label class="field-label">Primary goal</label>
+    <div class="pill-group" id="goal-pills">
+      <div class="pill" data-val="strength">Strength</div>
+      <div class="pill" data-val="endurance">Endurance</div>
+      <div class="pill" data-val="weightloss">Weight loss</div>
+      <div class="pill" data-val="general">General fitness</div>
+    </div>
+
+    <button class="btn primary full" style="margin-top:20px;" onclick="saveProfile()">SAVE PROFILE</button>
+  </div>
+
+  <!-- Onboarding Panel (first launch) -->
+  <div class="hud-panel hidden" id="panel-onboarding">
+    <div class="hud-panel-tag">// SYSTEM INITIALIZATION //</div>
+    <div class="hud-panel-title">WELCOME, HUNTER</div>
+    <div class="card-sub" style="text-align:center; margin-bottom:20px;">Let's set up your profile so quests can be tailored to you.</div>
+
+    <label class="field-label">Name</label>
+    <input type="text" id="onboard-name" placeholder="Your name">
+
+    <label class="field-label">Height (cm)</label>
+    <input type="number" id="onboard-height" placeholder="170">
+
+    <label class="field-label">Weight (kg)</label>
+    <input type="number" id="onboard-weight" placeholder="65">
+
+    <label class="field-label">Age</label>
+    <input type="number" id="onboard-age" placeholder="18">
+
+    <label class="field-label">Past exercise experience</label>
+    <div class="pill-group" id="onboard-experience-pills">
+      <div class="pill" data-val="beginner">Beginner</div>
+      <div class="pill" data-val="some">Some experience</div>
+      <div class="pill" data-val="experienced">Experienced</div>
+    </div>
+
+    <label class="field-label">Primary goal</label>
+    <div class="pill-group" id="onboard-goal-pills">
+      <div class="pill" data-val="strength">Strength</div>
+      <div class="pill" data-val="endurance">Endurance</div>
+      <div class="pill" data-val="weightloss">Weight loss</div>
+      <div class="pill" data-val="general">General fitness</div>
+    </div>
+
+    <button class="btn primary full" style="margin-top:20px;" onclick="completeOnboarding()">ENTER THE FORGE</button>
+  </div>
+
+  <!-- Exercise Detail Panel -->
+  <div class="hud-panel hidden" id="panel-exercise-detail">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag" id="exercise-detail-tag">// EXERCISE //</div>
+    <div class="hud-panel-title" id="exercise-detail-name">EXERCISE NAME</div>
+
+    <div class="etags" id="exercise-detail-tags" style="margin-bottom:4px;"></div>
+
+    <div class="section-label" style="margin-top:18px;">FORM GUIDELINES</div>
+    <ul class="guideline-list" id="exercise-detail-guidelines"></ul>
+
+    <div class="card-sub" style="margin-top:4px; margin-bottom:4px;">Suggested target: <span id="exercise-detail-target" style="color:var(--text-bright);"></span></div>
+
+    <button class="btn primary full" style="margin-top:16px;" onclick="addLibraryExerciseToQuests()">ADD TO TODAY'S QUESTS</button>
+  </div>
+
+  <!-- Quest feedback panel (after completing a quest) -->
+  <div class="hud-panel hidden" id="panel-quest-feedback">
+    <div class="hud-panel-tag">// QUEST COMPLETE //</div>
+    <div class="hud-panel-title">HOW DID THAT FEEL?</div>
+    <div class="card-sub" style="text-align:center; margin-bottom:18px;">This helps tune tomorrow's difficulty.</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn full" onclick="submitFeedback('easy')">TOO EASY</button>
+      <button class="btn full" onclick="submitFeedback('right')">JUST RIGHT</button>
+      <button class="btn full" onclick="submitFeedback('hard')">TOO HARD</button>
+    </div>
+  </div>
+
+  <!-- Camera exercise selection panel -->
+  <div class="hud-panel hidden" id="panel-camera-select">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag">// CAMERA TRACKING //</div>
+    <div class="hud-panel-title">CHOOSE EXERCISE</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn full" onclick="launchCameraTracking('pushups')">PUSH-UPS</button>
+      <button class="btn full" onclick="launchCameraTracking('situps')">SIT-UPS</button>
+      <button class="btn full" onclick="launchCameraTracking('squats')">SQUATS</button>
+    </div>
+  </div>
+
+  <!-- Camera tracking live panel -->
+  <div class="hud-panel hidden" id="panel-camera-tracking" style="padding-left:0; padding-right:0;">
+    <div class="hud-panel-close" onclick="stopCameraTracking()" style="right:16px;">✕</div>
+    <div class="hud-panel-tag">// LIVE TRACKING //</div>
+    <div class="hud-panel-title" id="camera-tracking-title">PUSH-UPS</div>
+
+    <div id="camera-origin-warning" class="hidden" style="margin:0 18px 12px; background:rgba(255,80,80,0.1); border:1px solid #a83a3a; color:#ff9d9d; font-size:11px; padding:10px; border-radius:6px; text-align:center; line-height:1.5;">
+      ⚠ This page needs to be opened via a real https:// link for camera access to work.
+    </div>
+
+    <div id="camera-video-wrap" style="position:relative; width:100%; max-width:480px; aspect-ratio:3/4; background:#000; border-top:1px solid var(--border-dim); border-bottom:1px solid var(--border-dim); overflow:hidden; margin:0 auto 14px;">
+      <video id="camera-video" playsinline autoplay muted style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
+      <canvas id="camera-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1);"></canvas>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:28px; margin-bottom:10px;">
+      <div style="text-align:center;">
+        <div id="camera-rep-count" style="font-size:48px; font-weight:bold; color:var(--accent-bright); text-shadow:0 0 16px rgba(127,184,232,0.6); line-height:1;">0</div>
+        <div style="font-size:9px; letter-spacing:1.5px; color:#4a7aa8; margin-top:4px;">REPS</div>
+      </div>
+    </div>
+
+    <div id="camera-status" style="text-align:center; font-size:11px; color:#6a9ac0; padding:0 20px; min-height:36px;">Starting camera...</div>
+
+    <div style="display:flex; gap:10px; padding:0 18px; margin-top:8px;">
+      <button class="btn" onclick="switchCameraFacing()">SWITCH CAMERA</button>
+      <button class="btn primary" onclick="finishCameraTracking()">FINISH</button>
+    </div>
+
+    <button class="btn ghost full" style="margin-top:10px; padding-left:18px; padding-right:18px; width:calc(100% - 36px); margin-left:18px;" onclick="toggleCameraDebugLog()" id="camera-debug-toggle">SHOW DEBUG LOG</button>
+    <div id="camera-debug-log" class="hidden" style="margin:10px 18px 0; background:#0a0f18; border:1px solid #1f5a94; border-radius:6px; padding:10px; font-size:10px; line-height:1.5; white-space:pre-wrap; word-break:break-word; max-height:180px; overflow-y:auto; color:#8fb8d8;"></div>
+  </div>
+
+  <!-- GPS workout panel -->
+  <div class="hud-panel hidden" id="panel-gps-workout">
+    <div class="hud-panel-close" onclick="stopGPSWorkout()">✕</div>
+    <div class="hud-panel-tag">// GPS WORKOUT //</div>
+    <div class="hud-panel-title">RUN / WALK</div>
+
+    <div style="display:flex; justify-content:center; gap:28px; margin:10px 0 18px;">
+      <div style="text-align:center;">
+        <div id="gps-distance" style="font-size:38px; font-weight:bold; color:var(--accent-bright);">0.00</div>
+        <div style="font-size:9px; letter-spacing:1.5px; color:#4a7aa8; margin-top:4px;">KM</div>
+      </div>
+      <div style="text-align:center;">
+        <div id="gps-duration" style="font-size:38px; font-weight:bold; color:var(--text-bright);">00:00</div>
+        <div style="font-size:9px; letter-spacing:1.5px; color:#4a7aa8; margin-top:4px;">DURATION</div>
+      </div>
+    </div>
+
+    <div id="gps-status" style="text-align:center; font-size:11px; color:#6a9ac0; margin-bottom:16px;">Tap START to begin GPS tracking.</div>
+
+    <button class="btn primary full" id="gps-start-btn" onclick="startGPSWorkout()">START</button>
+    <button class="btn full hidden" id="gps-stop-btn" onclick="finishGPSWorkout()" style="margin-top:10px; border-color:#3a8a55; color:#c9ffd9;">FINISH WORKOUT</button>
+  </div>
+
+  <!-- Confirm clear data panel -->
+  <div class="hud-panel hidden" id="panel-confirm-clear">
+    <div class="hud-panel-close" onclick="closeAllPanels()">✕</div>
+    <div class="hud-panel-tag">// WARNING //</div>
+    <div class="hud-panel-title">CLEAR ALL DATA?</div>
+    <div class="card-sub" style="text-align:center; margin-bottom:20px;">This deletes your profile, streak, XP, and history permanently. This cannot be undone.</div>
+    <button class="btn full" style="border-color:#7a3030; color:#ff8a8a; margin-bottom:10px;" onclick="clearAllData()">YES, CLEAR EVERYTHING</button>
+    <button class="btn ghost full" onclick="closeAllPanels()">CANCEL</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js" crossorigin="anonymous"></script>
+<script src="./exercises.js"></script>
+<script src="./app.js"></script>
+<script src="./camera.js"></script>
+</body>
+</html>
